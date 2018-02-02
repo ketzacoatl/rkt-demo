@@ -22,7 +22,7 @@ docker-from-buildah:
 
 ## Docker image using `docker`
 docker-from-dockerfile:
-	@docker build -t toilet:docker scripts/build
+	@docker build -t nginx:docker scripts/build
 
 ## Show help screen
 help:

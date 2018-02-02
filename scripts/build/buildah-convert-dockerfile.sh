@@ -2,5 +2,6 @@
 set -eu
 
 script_path="$(dirname "$(realpath --no-symlinks "$0")")"
+cd "${script_path}"
 
-buildah bud -f "${script_path}/Dockerfile" -t toilet:buildah --format docker .
+buildah bud -f "${script_path}/Dockerfile" -t nginx:buildah --format docker .
