@@ -2,17 +2,29 @@
 stages:
   - lint
   - build
+  - run
 
 variables:
   PROJECT_NAME: "rkt-demo"
   RKT_VERSION: "1.29.0"
+  VERSION_TAG: "${CI_BUILD_REF_SLUG}_${CI_PIPELINE_ID}"
+  FROM_DOCKER: "docker-from-dockerfile"
+  FROM_BUILDAH: "docker-from-buildah"
+  BUILDAH_IMAGE: "${PROJECT_NAME}-${FROM_BUILDAH}"
+  DOCKER_IMAGE: "${PROJECT_NAME}-${FROM_DOCKER}"
+  CURRENT_BUILDAH: "${BUILDAH_IMAGE}:${VERSION_TAG}"
+  CURRENT_DOCKER: "${DOCKER_IMAGE}:${VERSION_TAG}"
+
+.anchors:
+  - &REGISTRYLOGIN
+    docker login -u gitlab-ci-token -p "${CI_BUILD_TOKEN}" "${CI_REGISTRY}"
 
 before_script:
   - 'wget https://github.com/rkt/rkt/releases/download/v${RKT_VERSION}/rkt_${RKT_VERSION}-1_amd64.deb'
-  - 'sudo apt install rkt_${RKT_VERSION}-1_amd64.deb'
+  - 'sudo apt install --yes rkt_${RKT_VERSION}-1_amd64.deb'
   - 'sudo add-apt-repository --yes ppa:projectatomic/ppa'
   - 'sudo apt update'
-  - 'sudo apt install buildah'
+  - 'sudo apt install --yes buildah'
 
 shellcheck:
   stage: lint
@@ -23,27 +35,54 @@ shellcheck:
 oci-from-buildah:
   stage: build
   script:
-    - 'make oci-from-buildah'
+    - 'sudo make oci-from-buildah'
   only:
     - master
 
 oci-from-dockerfile:
   stage: build
   script:
-    - 'make oci-from-dockerfile'
+    - 'sudo make oci-from-dockerfile'
   only:
     - master
 
 docker-from-buildah:
   stage: build
+  variables:
+    LATEST_IMAGE: "${BUILDAH_IMAGE}:latest"
   script:
-    - 'make docker-from-buildah'
+    - 'sudo make docker-from-buildah'
+    - 'sudo buildah commit --creds=gitlab-ci-token:${CI_BUILD_TOKEN} docker://${CI_REGISTRY}/${CURRENT_BUILDAH}'
+    - 'docker tag "${CURRENT_BUILDAH}" "${LATEST_IMAGE}"'
+    - 'docker push "${LATEST_IMAGE}"'
   only:
     - master
 
 docker-from-dockerfile:
   stage: build
+  variables:
+    LATEST_IMAGE: "${DOCKER_IMAGE}:latest"
   script:
-    - 'make docker-from-dockerfile'
+    - 'docker build -t "${CURRENT_DOCKER}" scripts/build'
+    - *REGISTRYLOGIN
+    - 'docker push "${CURRENT_DOCKER}"'
+    - 'docker tag "${CURRENT_DOCKER}" "${LATEST_IMAGE}"'
+    - 'docker push "${LATEST_IMAGE}"'
+  only:
+    - master
+
+docker:
+  stage: run
+  script:
+    - 'echo "Unimplemented"'
+    - 'exit 1'
+  only:
+    - master
+
+rkt:
+  stage: run
+  script:
+    - 'echo "Unimplemented"'
+    - 'exit 1'
   only:
     - master

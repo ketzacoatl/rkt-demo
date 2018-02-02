@@ -20,10 +20,6 @@ oci-from-dockerfile:
 docker-from-buildah:
 	@./scripts/build/with-buildah-create.sh 'docker'
 
-## Docker image using `docker`
-docker-from-dockerfile:
-	@docker build -t nginx:docker scripts/build
-
 ## Show help screen
 help:
 	@echo "Please use \`make <target>' where <target> is one of\n\n"
