@@ -26,4 +26,5 @@ b copy "${container}" "./files/it-works.txt" '/usr/share/nginx/html/it-works.txt
 b commit \
   --format "${1}" \
   --rm \
-  "${container}" "nginx:buildah-${1}"
+  "${container}" "rkt-demo:buildah-${1}"
+echo "${container}"
